@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:tahsilat_mobile/features/receipt/pages/signed_receipt_upload_page.dart';
+import 'package:tahsilat_mobile/features/receipt/pages/signed_receipt_view_page.dart';
 import 'package:tahsilat_mobile/core/services/api_service.dart';
 
 class ReceiptPreviewPage extends StatefulWidget {
@@ -560,6 +561,45 @@ class _ReceiptPreviewPageState extends State<ReceiptPreviewPage> {
                           icon: const Icon(Icons.upload_file),
                           label: const Text("İmzalı Makbuz Yükle"),
                         ),
+                        if (_receipt?["signedFilePath"]?.toString().isNotEmpty ?? false)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              final rawReceiptId =
+                                  _receipt?["id"] ?? _receipt?["Id"];
+
+                              final receiptId =
+                                  int.tryParse(rawReceiptId.toString());
+
+                              if (receiptId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Makbuz ID bulunamadı."),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SignedReceiptViewPage(
+                                    receiptId: receiptId,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 15,
+                              ),
+                            ),
+                            icon: const Icon(Icons.remove_red_eye),
+                            label: const Text("İmzalı Makbuzu Görüntüle"),
+                          ),
                       ],
                     ),
                   ],

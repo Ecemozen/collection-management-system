@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using YigitTahsilat.API.DTOs.Receipt;
 using YigitTahsilat.API.Interfaces;
 
@@ -7,7 +6,6 @@ namespace YigitTahsilat.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-  
     public class ReceiptsController : ControllerBase
     {
         private readonly IReceiptService _receiptService;
@@ -39,11 +37,16 @@ namespace YigitTahsilat.API.Controllers
         {
             var receipt = await _receiptService.AddAsync(dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = receipt.Id }, receipt);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = receipt.Id },
+                receipt);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateReceiptDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            UpdateReceiptDto dto)
         {
             var result = await _receiptService.UpdateAsync(id, dto);
 
@@ -64,9 +67,12 @@ namespace YigitTahsilat.API.Controllers
             return NoContent();
         }
 
+        // İmzalı makbuz yükleme
         [HttpPost("{id}/signed")]
-        [RequestSizeLimit(10 * 1024 * 1024)]
-        public async Task<IActionResult> UploadSignedReceipt(int id, IFormFile file)
+        [RequestSizeLimit(50 * 1024 * 1024)]
+        public async Task<IActionResult> UploadSignedReceipt(
+            int id,
+            IFormFile file)
         {
             try
             {
@@ -88,6 +94,22 @@ namespace YigitTahsilat.API.Controllers
                     message = ex.Message
                 });
             }
+        }
+
+        // İmzalı makbuzu görüntüleme/indirme
+        [HttpGet("{id}/signed")]
+        public async Task<IActionResult> GetSignedReceipt(int id)
+        {
+            var result =
+                await _receiptService.GetSignedReceiptAsync(id);
+
+            if (result == null)
+                return NotFound("İmzalı makbuz bulunamadı.");
+
+            return File(
+                result.Value.FileBytes,
+                result.Value.ContentType,
+                result.Value.FileName);
         }
     }
 }

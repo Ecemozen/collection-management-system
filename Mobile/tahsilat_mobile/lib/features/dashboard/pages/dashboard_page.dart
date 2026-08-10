@@ -1,5 +1,7 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:tahsilat_mobile/core/services/api_service.dart';
 import '../../customer/pages/customer_list_page.dart';
 import '../../payment/pages/payment_list_page.dart';
@@ -16,8 +18,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   static const Color primary = Color(0xFFE31E24);
-  int selectedMenuIndex = 0;
 
+  int selectedMenuIndex = 0;
   DashboardModel? dashboardData;
   bool isLoading = true;
   String? errorMessage;
@@ -33,9 +35,10 @@ class _DashboardPageState extends State<DashboardPage> {
       final api = ApiService();
       final response = await api.get("Dashboard");
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         setState(() {
           dashboardData = DashboardModel.fromJson(data);
           isLoading = false;
@@ -49,6 +52,7 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
         errorMessage = "Bağlantı hatası: $e";
@@ -66,40 +70,62 @@ class _DashboardPageState extends State<DashboardPage> {
       appBar: MediaQuery.of(context).size.width < 900
           ? AppBar(
               backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
               elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.black),
               title: const Text(
                 "Dashboard",
-                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             )
           : null,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            bool isDesktop = constraints.maxWidth >= 900;
+            final isDesktop = constraints.maxWidth >= 900;
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (isDesktop)
-                  SizedBox(
-                    width: 280,
-                    child: _buildSidebarContent(),
-                  ),
+                  SizedBox(width: 280, child: _buildSidebarContent()),
                 Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(isDesktop ? 30 : 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(isDesktop),
-                        const SizedBox(height: 30),
-                        _buildStatGrid(constraints.maxWidth),
-                        const SizedBox(height: 30),
-                        _buildMainContent(isDesktop),
-                      ],
-                    ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ImageFiltered(
+                          imageFilter: ImageFilter.blur(
+                            sigmaX: 2.5,
+                            sigmaY: 2.5,
+                          ),
+                          child: Image.asset(
+                            "assets/images/yigit_aku_bina.jpg",
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Container(
+                                  color: const Color(0xFFF5F6FA),
+                                ),
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.white.withOpacity(0.48),
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        padding: EdgeInsets.all(isDesktop ? 30 : 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildHeader(isDesktop),
+                            const SizedBox(height: 28),
+                            _buildStatGrid(constraints.maxWidth),
+                            const SizedBox(height: 34),
+                            _buildBatterySection(constraints.maxWidth),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -128,17 +154,14 @@ class _DashboardPageState extends State<DashboardPage> {
               width: double.infinity,
               fit: BoxFit.contain,
               alignment: Alignment.centerLeft,
-              errorBuilder: (context, error, stackTrace) {
-                return const Text(
-                  "TAHSİLAT",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: primary,
-                    letterSpacing: 1.2,
-                  ),
-                );
-              },
+              errorBuilder: (_, __, ___) => const Text(
+                "TAHSİLAT",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: primary,
+                ),
+              ),
             ),
           ),
           _buildMenuItem(Icons.grid_view_rounded, "Dashboard", 0),
@@ -155,6 +178,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildHeader(bool isDesktop) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (isDesktop)
           const Expanded(
@@ -164,15 +188,19 @@ class _DashboardPageState extends State<DashboardPage> {
                 Text(
                   "Dashboard",
                   style: TextStyle(
-                    fontSize: 30,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 5),
                 Text(
                   "Tahsilat Yönetim Sistemi",
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -183,32 +211,33 @@ class _DashboardPageState extends State<DashboardPage> {
         const SizedBox(width: 12),
         _buildHeaderIconButton(Icons.notifications_none_rounded),
         const SizedBox(width: 16),
-        const Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: primary,
-              child: Text(
-                "E",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        if (isDesktop)
+          const Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: primary,
+                child: Text(
+                  "E",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Ecem Özen",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-                Text(
-                  "Yönetici",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
-            ),
-          ],
-        ),
+              SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Ecem Özen",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text("Yönetici",
+                      style: TextStyle(color: Colors.black54, fontSize: 12)),
+                ],
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -224,16 +253,24 @@ class _DashboardPageState extends State<DashboardPage> {
     if (isLoading) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(40.0),
+          padding: EdgeInsets.all(40),
           child: CircularProgressIndicator(),
         ),
       );
     }
 
     if (errorMessage != null) {
-      return Text(
-        errorMessage!,
-        style: const TextStyle(color: Colors.red),
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.92),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Text(
+          errorMessage!,
+          style: const TextStyle(color: Colors.red),
+        ),
       );
     }
 
@@ -243,78 +280,175 @@ class _DashboardPageState extends State<DashboardPage> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: crossAxisCount,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: crossAxisCount == 1 ? 2.2 : 1.6,
+      crossAxisSpacing: 18,
+      mainAxisSpacing: 18,
+      childAspectRatio: crossAxisCount == 1 ? 2.7 : 1.55,
       children: [
-        _statCard(
-          Icons.people_alt_rounded,
-          "Toplam Cari",
-          "${data.totalCustomers}",
-          const Color(0xFF2196F3),
+        _statCard(Icons.people_alt_rounded, "Toplam Cari",
+            "${data.totalCustomers}", const Color(0xFF2196F3)),
+        _statCard(Icons.account_balance_wallet_rounded, "Toplam Borç",
+            _formatCurrency(data.totalDebtAmount), const Color(0xFFFF9800)),
+        _statCard(Icons.payments_rounded, "Toplam Tahsilat",
+            _formatCurrency(data.totalCollectedAmount), const Color(0xFF4CAF50)),
+        _statCard(Icons.money_off_csred_rounded, "Kalan Borç",
+            _formatCurrency(data.remainingAmount), primary),
+      ],
+    );
+  }
+
+  String _formatCurrency(double value) => "₺${value.toStringAsFixed(2)}";
+
+  Widget _statCard(
+      IconData icon, String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 22,
+            offset: const Offset(0, 9),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF777777),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(icon, color: color, size: 21),
+              ),
+            ],
+          ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF171717),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBatterySection(double maxWidth) {
+    int columns = 4;
+    if (maxWidth < 650) {
+      columns = 1;
+    } else if (maxWidth < 1000) {
+      columns = 2;
+    }
+
+    final batteries = [
+      "assets/images/battery_premium.jpg",
+      "assets/images/battery_silver.jpg",
+      "assets/images/battery_efb.jpg",
+      "assets/images/battery_asia.jpg",
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Yiğit Akü Ürünleri",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF171717),
+          ),
         ),
-        _statCard(
-          Icons.account_balance_wallet_rounded,
-          "Toplam Borç",
-          _formatCurrency(data.totalDebtAmount),
-          const Color(0xFFFF9800),
-        ),
-        _statCard(
-          Icons.payments_rounded,
-          "Toplam Tahsilat",
-          _formatCurrency(data.totalCollectedAmount),
-          const Color(0xFF4CAF50),
-        ),
-        _statCard(
-          Icons.money_off_csred_rounded,
-          "Kalan Borç",
-          _formatCurrency(data.remainingAmount),
-          primary,
+        const SizedBox(height: 18),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: batteries.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 18,
+            mainAxisSpacing: 18,
+            childAspectRatio: columns == 1 ? 2.0 : 1.35,
+          ),
+          itemBuilder: (context, index) {
+            return _buildBatteryCard(
+              image: batteries[index],
+              title: "",
+              subtitle: "",
+            );
+          },
         ),
       ],
     );
   }
 
-  String _formatCurrency(double value) {
-    return "₺${value.toStringAsFixed(2)}";
-  }
-
-  Widget _buildMainContent(bool isDesktop) {
-    if (isDesktop) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 65,
-            child: Column(
-              children: [
-                _buildIncomeChartPanel(),
-                const SizedBox(height: 25),
-                _buildRecentTransactionsPanel(),
-              ],
-            ),
-          ),
-          const SizedBox(width: 25),
-          Expanded(
-            flex: 35,
-            child: _buildUpcomingPaymentsPanel(),
+  Widget _buildBatteryCard({
+    required String image,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.96),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
         ],
-      );
-    } else {
-      return Column(
-        children: [
-          _buildIncomeChartPanel(),
-          const SizedBox(height: 20),
-          _buildRecentTransactionsPanel(),
-          const SizedBox(height: 20),
-          _buildUpcomingPaymentsPanel(),
-        ],
-      );
-    }
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Image.asset(
+          image,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) {
+            return const Center(
+              child: Icon(
+                Icons.battery_full_rounded,
+                size: 60,
+                color: primary,
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
-  Widget _buildMenuItem(IconData icon, String title, int index, {bool isLogout = false}) {
+  Widget _buildMenuItem(IconData icon, String title, int index,
+      {bool isLogout = false}) {
     final bool isSelected = selectedMenuIndex == index;
 
     return Padding(
@@ -324,37 +458,19 @@ class _DashboardPageState extends State<DashboardPage> {
           setState(() => selectedMenuIndex = index);
 
           if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const PaymentListPage(),
-              ),
-            );
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const PaymentListPage()));
           } else if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const CustomerListPage(),
-              ),
-            );
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CustomerListPage()));
           } else if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ReportDashboardPage(),
-              ),
-            );
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ReportDashboardPage()));
           } else if (index == 4) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ReceiptArchivePage(),
-              ),
-            );
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ReceiptArchivePage()));
           }
         },
-        splashColor: primary.withOpacity(0.05),
-        highlightColor: Colors.transparent,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 50,
@@ -389,8 +505,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: TextStyle(
                   color: isSelected
                       ? primary
-                      : (isLogout ? Colors.redAccent : const Color(0xFF444444)),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      : (isLogout
+                          ? Colors.redAccent
+                          : const Color(0xFF444444)),
+                  fontWeight:
+                      isSelected ? FontWeight.bold : FontWeight.w500,
                   fontSize: 15,
                 ),
               ),
@@ -403,281 +522,20 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildHeaderIconButton(IconData icon) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.94),
+        borderRadius: BorderRadius.circular(13),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Icon(icon, color: const Color(0xFF555555), size: 20),
-    );
-  }
-
-  Widget _statCard(IconData icon, String title, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Flexible(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF888888),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: color.withOpacity(0.12),
-                child: Icon(icon, color: color, size: 18),
-              ),
-            ],
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIncomeChartPanel() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "📈 Gelir Grafiği",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 140,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildBar("Pzt", 0.4),
-                _buildBar("Sal", 0.65),
-                _buildBar("Çar", 0.5),
-                _buildBar("Per", 0.85),
-                _buildBar("Cum", 0.7),
-                _buildBar("Cmt", 0.3),
-                _buildBar("Paz", 0.2),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBar(String day, double heightFactor) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(
-          width: 22,
-          height: 100 * heightFactor,
-          decoration: BoxDecoration(
-            color: primary.withOpacity(heightFactor > 0.7 ? 1.0 : 0.35),
-            borderRadius: BorderRadius.circular(6),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(day, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildRecentTransactionsPanel() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Son Tahsilatlar",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 15),
-          _transactionRow("Ankara Lojistik A.Ş.", "₺45.000", "Bugün, 14:30"),
-          const Divider(height: 20),
-          _transactionRow("Zonguldak Madencilik Ltd.", "₺18.500", "Bugün, 11:15"),
-          const Divider(height: 20),
-          _transactionRow("Bülent Otomotiv", "₺61.500", "Dün, 16:45"),
-        ],
-      ),
-    );
-  }
-
-  Widget _transactionRow(String company, String amount, String date) {
-    return Row(
-      children: [
-        const CircleAvatar(
-          radius: 16,
-          backgroundColor: Color(0xFFE8F5E9),
-          child: Icon(Icons.arrow_downward, color: Color(0xFF4CAF50), size: 16),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                company,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-              Text(date, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-            ],
-          ),
-        ),
-        Text(
-          amount,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: Color(0xFF4CAF50),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUpcomingPaymentsPanel() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Yaklaşan Ödemeler",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 15),
-          _paymentRow("Sigma Teknoloji", "₺32.000", "Son 2 Gün"),
-          const SizedBox(height: 12),
-          _paymentRow("NovaStore Mağazacılık", "₺14.200", "Son 5 Gün"),
-          const SizedBox(height: 12),
-          _paymentRow("Kamil Koç Taşımacılık", "₺8.750", "Haftaya"),
-        ],
-      ),
-    );
-  }
-
-  Widget _paymentRow(String title, String amount, String status) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  status,
-                  style: const TextStyle(
-                    color: Colors.orange,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        ],
-      ),
     );
   }
 }

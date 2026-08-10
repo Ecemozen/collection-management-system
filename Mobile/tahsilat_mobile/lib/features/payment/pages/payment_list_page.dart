@@ -16,6 +16,9 @@ class _PaymentListPageState extends State<PaymentListPage> {
   static const Color primary = Color(0xFFE31E24);
 
   List<Map<String, dynamic>> _payments = [];
+  List<Map<String, dynamic>> _filteredPayments = [];
+  final TextEditingController _searchController = TextEditingController();
+  
   bool isLoading = true;
   String? errorMessage;
 
@@ -23,12 +26,18 @@ class _PaymentListPageState extends State<PaymentListPage> {
   void initState() {
     super.initState();
     _loadPayments();
+    _searchController.addListener(_filterPayments);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPayments() async {
     try {
       final api = ApiService();
-
       final response = await api.get("Payments");
 
       if (response.statusCode == 200) {
@@ -36,14 +45,14 @@ class _PaymentListPageState extends State<PaymentListPage> {
 
         setState(() {
           _payments = List<Map<String, dynamic>>.from(data);
+          _filteredPayments = _payments;
           isLoading = false;
           errorMessage = null;
         });
       } else {
         setState(() {
           isLoading = false;
-          errorMessage =
-              "Tahsilatlar alınamadı. Kod: ${response.statusCode}";
+          errorMessage = "Tahsilatlar alınamadı. Kod: ${response.statusCode}";
         });
       }
     } catch (e) {
@@ -52,6 +61,91 @@ class _PaymentListPageState extends State<PaymentListPage> {
         errorMessage = "Bağlantı hatası: $e";
       });
     }
+  }
+
+  Future<void> _deletePayment(int paymentId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Tahsilatı Sil",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            "Bu tahsilatı silmek istediğinize emin misiniz?\n\n"
+            "Bu işlem geri alınamaz.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text("İptal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Sil"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    try {
+      final api = ApiService();
+      final response = await api.delete("Payments/$paymentId");
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Tahsilat başarıyla silindi."),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        await _loadPayments();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Tahsilat silinemedi. Kod: ${response.statusCode}",
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Silme sırasında hata oluştu: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _filterPayments() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredPayments = _payments.where((payment) {
+        final customer = payment["companyName"]?.toString().toLowerCase() ?? "";
+        final paymentType = payment["feeTypeName"]?.toString().toLowerCase() ?? "";
+        return customer.contains(query) || paymentType.contains(query);
+      }).toList();
+    });
   }
 
   Widget _buildPaymentContent() {
@@ -73,7 +167,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
       );
     }
 
-    if (_payments.isEmpty) {
+    if (_filteredPayments.isEmpty) {
       return const Center(
         child: Text(
           "Kayıtlı tahsilat bulunamadı.",
@@ -131,7 +225,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
               ),
             ),
           ],
-          rows: _payments.map((payment) {
+          rows: _filteredPayments.map((payment) {
             final bool isPaid = payment["isPaid"] == true;
 
             final String customer =
@@ -180,6 +274,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
                 DataCell(
                   Row(
                     children: [
+                      // GÖRÜNTÜLE
                       IconButton(
                         onPressed: () {
                           Navigator.push(
@@ -197,6 +292,7 @@ class _PaymentListPageState extends State<PaymentListPage> {
                         ),
                         tooltip: "Detay",
                       ),
+                      // DÜZENLE
                       IconButton(
                         onPressed: () async {
                           await Navigator.push(
@@ -215,6 +311,17 @@ class _PaymentListPageState extends State<PaymentListPage> {
                           color: Colors.orange,
                         ),
                         tooltip: "Düzenle",
+                      ),
+                      // SİL
+                      IconButton(
+                        onPressed: () {
+                          _deletePayment(payment["id"]);
+                        },
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                        ),
+                        tooltip: "Sil",
                       ),
                     ],
                   ),
@@ -266,16 +373,17 @@ class _PaymentListPageState extends State<PaymentListPage> {
                     ),
                   ),
                   const Spacer(),
-                  const SizedBox(
+                  SizedBox(
                     width: 320,
                     child: TextField(
+                      controller: _searchController,
                       decoration: InputDecoration(
                         hintText: "Tahsilat Ara...",
-                        prefixIcon: Icon(Icons.search),
+                        prefixIcon: const Icon(Icons.search),
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
-                        border: OutlineInputBorder(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        border: const OutlineInputBorder(
                           borderRadius: BorderRadius.all(
                             Radius.circular(14),
                           ),

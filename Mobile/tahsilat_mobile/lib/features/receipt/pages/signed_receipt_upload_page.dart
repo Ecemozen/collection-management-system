@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:tahsilat_mobile/core/services/api_service.dart';
-import 'package:tahsilat_mobile/features/receipt/pages/receipt_archive_page.dart';
+import 'package:tahsilat_mobile/features/receipt/pages/signed_receipt_view_page.dart';
 
 class SignedReceiptUploadPage extends StatefulWidget {
   final int receiptId;
@@ -98,7 +98,9 @@ class _SignedReceiptUploadPageState
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => const ReceiptArchivePage(),
+            builder: (_) => SignedReceiptViewPage(
+              receiptId: widget.receiptId,
+            ),
           ),
         );
       } else {

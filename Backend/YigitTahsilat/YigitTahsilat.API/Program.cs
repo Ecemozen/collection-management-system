@@ -14,6 +14,12 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Dosya yükleme limiti
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024; // 50 MB
+});
+
 // Controllers
 builder.Services.AddControllers();
 
