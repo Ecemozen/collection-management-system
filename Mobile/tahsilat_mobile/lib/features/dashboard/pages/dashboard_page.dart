@@ -7,6 +7,7 @@ import '../../customer/pages/customer_list_page.dart';
 import '../../payment/pages/payment_list_page.dart';
 import '../../reports/pages/report_dashboard_page.dart';
 import 'package:tahsilat_mobile/features/receipt/pages/receipt_archive_page.dart';
+import '../../auth/pages/login_page.dart';
 import '../models/dashboard_model.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -91,6 +92,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Expanded(
                   child: Stack(
                     children: [
+                      // Buğulu arka plan
                       Positioned.fill(
                         child: ImageFiltered(
                           imageFilter: ImageFilter.blur(
@@ -98,20 +100,20 @@ class _DashboardPageState extends State<DashboardPage> {
                             sigmaY: 2.5,
                           ),
                           child: Image.asset(
-                            "assets/images/yigit_aku_bina.jpg",
+                            "assets/images/buğu.png",
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                Container(
-                                  color: const Color(0xFFF5F6FA),
-                                ),
                           ),
                         ),
                       ),
+
+                      // Görselin üzerine hafif beyaz katman
                       Positioned.fill(
                         child: Container(
-                          color: Colors.white.withOpacity(0.48),
+                          color: Colors.white.withOpacity(0.55),
                         ),
                       ),
+
+                      // Dashboard içeriği
                       SingleChildScrollView(
                         padding: EdgeInsets.all(isDesktop ? 30 : 16),
                         child: Column(
@@ -120,8 +122,6 @@ class _DashboardPageState extends State<DashboardPage> {
                             _buildHeader(isDesktop),
                             const SizedBox(height: 28),
                             _buildStatGrid(constraints.maxWidth),
-                            const SizedBox(height: 34),
-                            _buildBatterySection(constraints.maxWidth),
                           ],
                         ),
                       ),
@@ -150,7 +150,7 @@ class _DashboardPageState extends State<DashboardPage> {
             margin: const EdgeInsets.only(bottom: 20),
             alignment: Alignment.centerLeft,
             child: Image.asset(
-              "assets/images/logo.png",
+              "assets/images/logo2.jpeg",
               width: double.infinity,
               fit: BoxFit.contain,
               alignment: Alignment.centerLeft,
@@ -207,8 +207,6 @@ class _DashboardPageState extends State<DashboardPage> {
           )
         else
           const Spacer(),
-        _buildHeaderIconButton(Icons.search_rounded),
-        const SizedBox(width: 12),
         _buildHeaderIconButton(Icons.notifications_none_rounded),
         const SizedBox(width: 16),
         if (isDesktop)
@@ -359,94 +357,6 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBatterySection(double maxWidth) {
-    int columns = 4;
-    if (maxWidth < 650) {
-      columns = 1;
-    } else if (maxWidth < 1000) {
-      columns = 2;
-    }
-
-    final batteries = [
-      "assets/images/battery_premium.jpg",
-      "assets/images/battery_silver.jpg",
-      "assets/images/battery_efb.jpg",
-      "assets/images/battery_asia.jpg",
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Yiğit Akü Ürünleri",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF171717),
-          ),
-        ),
-        const SizedBox(height: 18),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: batteries.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 18,
-            mainAxisSpacing: 18,
-            childAspectRatio: columns == 1 ? 2.0 : 1.35,
-          ),
-          itemBuilder: (context, index) {
-            return _buildBatteryCard(
-              image: batteries[index],
-              title: "",
-              subtitle: "",
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBatteryCard({
-    required String image,
-    required String title,
-    required String subtitle,
-  }) {
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.96),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.10),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Image.asset(
-          image,
-          width: double.infinity,
-          height: double.infinity,
-          fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) {
-            return const Center(
-              child: Icon(
-                Icons.battery_full_rounded,
-                size: 60,
-                color: primary,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   Widget _buildMenuItem(IconData icon, String title, int index,
       {bool isLogout = false}) {
     final bool isSelected = selectedMenuIndex == index;
@@ -458,17 +368,41 @@ class _DashboardPageState extends State<DashboardPage> {
           setState(() => selectedMenuIndex = index);
 
           if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const PaymentListPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PaymentListPage(),
+              ),
+            );
           } else if (index == 2) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CustomerListPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const CustomerListPage(),
+              ),
+            );
           } else if (index == 3) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ReportDashboardPage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ReportDashboardPage(),
+              ),
+            );
           } else if (index == 4) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ReceiptArchivePage()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ReceiptArchivePage(),
+              ),
+            );
+          } else if (index == 5) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LoginPage(),
+              ),
+              (route) => false,
+            );
           }
         },
         child: AnimatedContainer(

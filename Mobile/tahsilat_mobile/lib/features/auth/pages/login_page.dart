@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +166,7 @@ class _LoginPageState extends State<LoginPage> {
                   alignment: Alignment.topLeft,
                   heightFactor: 0.7,
                   child: Image.asset(
-                    "assets/images/logo.png",
+                    "assets/images/logo2.jpeg",
                     width: 320,
                   ),
                 ),
@@ -190,27 +190,7 @@ class _LoginPageState extends State<LoginPage> {
                   height: 1.6,
                 ),
               ),
-              const SizedBox(height: 30),
-              const Text(
-                "Yiğit Akü İleriye Götürür",
-                style: TextStyle(
-                  color: primary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.3,
-                ),
-              ),
             ],
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 20),
-            child: Text(
-              "© 2026 Yiğit Akü",
-              style: TextStyle(
-                color: Color(0xff999999),
-                fontSize: 13,
-              ),
-            ),
           ),
         ],
       ),
@@ -249,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
                     alignment: Alignment.topCenter,
                     heightFactor: 0.7,
                     child: Image.asset(
-                      "assets/images/logo.png",
+                      "assets/images/logo2.jpeg",
                       width: 180,
                     ),
                   ),
